@@ -1,5 +1,5 @@
 import discord
-
+import os
 
 class GeoBot(discord.Bot):
 
@@ -13,6 +13,11 @@ class GeoBot(discord.Bot):
 
 def main():
     bot = GeoBot()
+    for filename in os.listdir("./cogs"):
+        if filename.endswith(".py"):
+            # cut off the .py from the file name
+            bot.load_extension(f"cogs.{filename[:-3]}")
+
     bot.run()
 
 
