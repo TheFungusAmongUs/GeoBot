@@ -33,7 +33,8 @@ class QuestionCog(discord.Cog):
         self.bot = bot
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
-    async def ask(self):
+    async def ask(self, ctx: discord.ApplicationContext, question_title: str, question_body: str,
+                  image: discord.Attachment):
         pass
 
 
