@@ -1,4 +1,5 @@
 import discord
+import main
 from typing import Optional, Type, Union
 
 
@@ -31,7 +32,7 @@ class QuestionCog(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @discord.command()
+    @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
     async def ask(self):
         pass
 
