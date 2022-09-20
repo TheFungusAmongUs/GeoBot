@@ -5,6 +5,8 @@ from typing import Optional, Type, Union
 
 class Question:
 
+    bot: Type[discord.Bot]
+
     def __init__(self, title: str, body: str, author: Union[discord.Member, discord.User],
                  closed: Optional[bool] = False):
         self.title = title
@@ -26,6 +28,11 @@ class Question:
     def to_json(self):
         return self.__dict__.update({"author": self.author.id})
 
+    async def create(self):
+        # noinspection PyTypeChecker
+        channel: discord.ForumChannel = self.bot.get_channel(main.GLOBAL_CONFIG["IAF_CHANNEL_ID"])
+        await channel.create_thread(name=self.title, content=self.body + f"\n\nOP: {self.author.mention}")
+
 
 class QuestionApprovalView(discord.ui.View):
 
@@ -35,7 +42,7 @@ class QuestionApprovalView(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.green, label="Approve")
     async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
-        pass
+        await self.question.create()
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Deny")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
@@ -54,6 +61,7 @@ class QuestionCog(discord.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        Question.bot = bot
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
     async def ask(
