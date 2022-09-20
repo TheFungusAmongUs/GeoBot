@@ -92,7 +92,9 @@ class DenyModal(discord.ui.Modal):
                               "instead, try to improve your existing question")
             )
         except discord.Forbidden:
-            pass
+            await interaction.response.send_message("User was not notified: DMs are closed", ephemeral=True)
+        else:
+            await interaction.response.send_message("User was notified", ephemeral=True)
 
 
 class QuestionApprovalView(discord.ui.View):
