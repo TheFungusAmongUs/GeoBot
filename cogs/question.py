@@ -46,7 +46,7 @@ class QuestionModal(discord.ui.Modal):
             label="Question/Feedback Title",
             min_length=10,
             max_length=100,
-            value=getattr(question, "title", __default=None),
+            value=getattr(question, "title", None),
             placeholder="Enter a concise, specific title"
         ))
 
@@ -54,7 +54,7 @@ class QuestionModal(discord.ui.Modal):
             label="Question/Feedback Body",
             min_length=10,
             max_length=2000,
-            value=getattr(question, "body", __default=None),
+            value=getattr(question, "body", None),
             placeholder="You can add more details here! You can add images when the question has been improved."
         ))
 
@@ -66,8 +66,10 @@ class QuestionModal(discord.ui.Modal):
             return
 
         # noinspection PyTypeChecker
-        approve_channel: discord.TextChannel = Question.bot.get_channel(main.config["APPROVE_CHANNEL_ID"])
+        approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
         await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
+        await interaction.response.send_message(content="*Question Submitted*",
+                                                embed=new_question.make_embed(), ephemeral=True)
 
 
 class DenyModal(discord.ui.Modal):
