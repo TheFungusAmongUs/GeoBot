@@ -70,6 +70,29 @@ class QuestionModal(discord.ui.Modal):
         await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
 
 
+class DenyModal(discord.ui.Modal):
+
+    def __init__(self, question: Question):
+        super().__init__(title="Deny this question")
+        self.add_item(discord.ui.InputText(
+            label="Reason",
+            placeholder="Why is this question being denied? :("
+        ))
+        self.question = question
+
+    async def callback(self, interaction: discord.Interaction):
+        try:
+            await self.question.author.send(embed=discord.Embed(
+                title="Question/Feedback was not accepted",
+                description=f"**Please read this carefully:** \n\n"
+                            f"Your question/feedback was not accepted for this reason: {self.children[0].value}"
+            ).set_footer(text="Please do not ask the same question/give the same feedback, "
+                              "instead, try to improve your existing question")
+            )
+        except discord.Forbidden:
+            pass
+
+
 class QuestionApprovalView(discord.ui.View):
 
     def __init__(self, question: Question):
@@ -82,7 +105,8 @@ class QuestionApprovalView(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Deny")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
-        pass
+        await interaction.response.send_modal(DenyModal(self.question))
+        self.question.status = QuestionStatus.DENIED
 
     @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve")
     async def improve_button(self, button: discord.Button, interaction: discord.Interaction):
