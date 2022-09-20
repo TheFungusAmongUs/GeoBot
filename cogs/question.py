@@ -33,8 +33,19 @@ class QuestionCog(discord.Cog):
         self.bot = bot
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
-    async def ask(self, ctx: discord.ApplicationContext, question_title: str, question_body: str,
-                  image: discord.Attachment):
+    async def ask(self, ctx: discord.ApplicationContext,
+                  question_title: discord.Option(
+                      required=True,
+                      input_type=str,
+                      description="Please include a brief, specific question title",
+                      max_length=100
+                  ),
+                  question_body: discord.Option(
+                      required=True,
+                      input_type=str,
+                      description="You can add more details in the question body"
+                  )
+                  ):
         pass
 
 
