@@ -34,6 +34,37 @@ class Question:
         await channel.create_thread(name=self.title, content=self.body + f"\n\nOP: {self.author.mention}")
 
 
+class QuestionModal(discord.ui.Modal):
+
+    def __init__(self, question: Optional[Question] = None):
+        super().__init__(title="Ask a question/Give feedback")
+        self.question = question
+
+        self.add_item(discord.ui.InputText(
+            label="Question/Feedback Title",
+            min_length=10,
+            max_length=100,
+            value=getattr(question, "title", __default=None)
+        ))
+
+        self.add_item(discord.ui.InputText(
+            label="Question/Feedback Body",
+            min_length=10,
+            max_length=2000,
+            value=getattr(question, "body", __default=None)
+        ))
+
+    async def callback(self, interaction: discord.Interaction):
+        new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
+        if self.question:
+            await self.question.create()
+            return
+
+        # noinspection PyTypeChecker
+        approve_channel: discord.TextChannel = Question.bot.get_channel(main.config["APPROVE_CHANNEL_ID"])
+        await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
+
+
 class QuestionApprovalView(discord.ui.View):
 
     def __init__(self, question: Question):
@@ -79,10 +110,9 @@ class QuestionCog(discord.Cog):
             )
     ):
         # noinspection PyTypeChecker
-        approve_channel: discord.TextChannel = self.bot.get_channel(main.config["APPROVE_CHANNEL_ID"])
         question = Question(question_title, question_body, ctx.author)
 
-        await approve_channel.send(embed=question.make_embed())
+
 
 
 def setup(bot):
