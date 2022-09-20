@@ -9,7 +9,7 @@ class Question:
     bot: Type[discord.Bot]
 
     def __init__(self, title: str, body: str, author: Union[discord.Member, discord.User],
-                 status: Optional[QuestionStatus] = QuestionStatus.IN_REVIEW):
+                 status: QuestionStatus = QuestionStatus.IN_REVIEW):
         self.status: QuestionStatus = status
         self.title = title
         self.body = body
