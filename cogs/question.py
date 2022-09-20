@@ -44,14 +44,16 @@ class QuestionModal(discord.ui.Modal):
             label="Question/Feedback Title",
             min_length=10,
             max_length=100,
-            value=getattr(question, "title", __default=None)
+            value=getattr(question, "title", __default=None),
+            placeholder="Enter a concise, specific title"
         ))
 
         self.add_item(discord.ui.InputText(
             label="Question/Feedback Body",
             min_length=10,
             max_length=2000,
-            value=getattr(question, "body", __default=None)
+            value=getattr(question, "body", __default=None),
+            placeholder="You can add more details here! You can add images when the question has been improved."
         ))
 
     async def callback(self, interaction: discord.Interaction):
@@ -81,7 +83,7 @@ class QuestionApprovalView(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve")
     async def improve_button(self, button: discord.Button, interaction: discord.Interaction):
-        pass
+        await interaction.response.send_modal(QuestionModal(self.question))
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate")
     async def duplicate_button(self, button: discord.Button, interaction: discord.Interaction):
@@ -95,24 +97,8 @@ class QuestionCog(discord.Cog):
         Question.bot = bot
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
-    async def ask(
-            self, ctx: discord.ApplicationContext,
-            question_title: discord.Option(
-                required=True,
-                input_type=str,
-                description="Please include a brief, specific question title",
-                max_length=100
-            ),
-            question_body: discord.Option(
-                required=True,
-                input_type=str,
-                description="You can add more details in the question body"
-            )
-    ):
-        # noinspection PyTypeChecker
-        question = Question(question_title, question_body, ctx.author)
-
-
+    async def ask(self, ctx: discord.ApplicationContext):
+        await ctx.response.send_modal(QuestionModal())
 
 
 def setup(bot):
