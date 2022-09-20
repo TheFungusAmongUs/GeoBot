@@ -33,20 +33,25 @@ class QuestionCog(discord.Cog):
         self.bot = bot
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
-    async def ask(self, ctx: discord.ApplicationContext,
-                  question_title: discord.Option(
-                      required=True,
-                      input_type=str,
-                      description="Please include a brief, specific question title",
-                      max_length=100
-                  ),
-                  question_body: discord.Option(
-                      required=True,
-                      input_type=str,
-                      description="You can add more details in the question body"
-                  )
-                  ):
-        pass
+    async def ask(
+            self, ctx: discord.ApplicationContext,
+            question_title: discord.Option(
+                required=True,
+                input_type=str,
+                description="Please include a brief, specific question title",
+                max_length=100
+            ),
+            question_body: discord.Option(
+                required=True,
+                input_type=str,
+                description="You can add more details in the question body"
+            )
+    ):
+        # noinspection PyTypeChecker
+        approve_channel: discord.TextChannel = self.bot.get_channel(main.config["APPROVE_CHANNEL_ID"])
+        question = Question(question_title, question_body, ctx.author)
+
+        await approve_channel.send(embed=question.make_embed())
 
 
 def setup(bot):
