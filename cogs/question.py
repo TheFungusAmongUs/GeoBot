@@ -27,6 +27,29 @@ class Question:
         return self.__dict__.update({"author": self.author.id})
 
 
+class QuestionApprovalView(discord.ui.View):
+
+    def __init__(self, question: Question):
+        super().__init__(timeout=None)
+        self.question = question
+
+    @discord.ui.button(style=discord.ButtonStyle.green, label="Approve")
+    async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
+        pass
+
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny")
+    async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
+        pass
+
+    @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve")
+    async def improve_button(self, button: discord.Button, interaction: discord.Interaction):
+        pass
+
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate")
+    async def duplicate_button(self, button: discord.Button, interaction: discord.Interaction):
+        pass
+
+
 class QuestionCog(discord.Cog):
 
     def __init__(self, bot):
