@@ -1,6 +1,7 @@
 import discord
 import main
 from typing import Optional, Type, Union
+from utils.enums import QuestionStatus
 
 
 class Question:
@@ -8,11 +9,11 @@ class Question:
     bot: Type[discord.Bot]
 
     def __init__(self, title: str, body: str, author: Union[discord.Member, discord.User],
-                 closed: Optional[bool] = False):
+                 status: Optional[QuestionStatus] = QuestionStatus.IN_REVIEW):
+        self.status: QuestionStatus = status
         self.title = title
         self.body = body
         self.author = author
-        self.closed = closed
 
     def make_embed(self):
         return discord.Embed(
@@ -26,11 +27,12 @@ class Question:
         return cls(**json_object.update({"author": bot.get_user(json_object["author"])}))
 
     def to_json(self):
-        return self.__dict__.update({"author": self.author.id})
+        return self.__dict__.copy().update({"author": self.author.id})
 
     async def create(self):
         # noinspection PyTypeChecker
         channel: discord.ForumChannel = self.bot.get_channel(main.GLOBAL_CONFIG["IAF_CHANNEL_ID"])
+        self.status = QuestionStatus.APPROVED
         await channel.create_thread(name=self.title, content=self.body + f"\n\nOP: {self.author.mention}")
 
 
@@ -59,7 +61,8 @@ class QuestionModal(discord.ui.Modal):
     async def callback(self, interaction: discord.Interaction):
         new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
         if self.question:
-            await self.question.create()
+            await new_question.create()
+            new_question.status = QuestionStatus.APPROVED
             return
 
         # noinspection PyTypeChecker
@@ -93,7 +96,6 @@ class QuestionApprovalView(discord.ui.View):
 class QuestionCog(discord.Cog):
 
     def __init__(self, bot):
-        self.bot = bot
         Question.bot = bot
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
