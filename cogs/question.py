@@ -63,6 +63,7 @@ class QuestionModal(discord.ui.Modal):
         new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
         if self.question:
             await new_question.create()
+            await interaction.response.send_message("Question has been approved")
             new_question.status = QuestionStatus.APPROVED
             return
 
@@ -93,9 +94,9 @@ class DenyModal(discord.ui.Modal):
                               "instead, try to improve your existing question")
             )
         except discord.Forbidden:
-            await interaction.response.send_message("User was not notified: DMs are closed", ephemeral=True)
+            await interaction.response.send_message("Question Denied\nUser was not notified: DMs are closed")
         else:
-            await interaction.response.send_message("User was notified", ephemeral=True)
+            await interaction.response.send_message("Question Denied\nUser was notified")
 
 
 class QuestionApprovalView(discord.ui.View):
@@ -112,6 +113,8 @@ class QuestionApprovalView(discord.ui.View):
     @discord.ui.button(style=discord.ButtonStyle.green, label="Approve")
     async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
         await self.question.create()
+        self.question.status = QuestionStatus.APPROVED
+        await interaction.response.send_message("Question has been approved")
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Deny")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
