@@ -22,9 +22,9 @@ class Question:
         ).add_field(name="Submitted By", value=f"<@!{self.author.id}>").set_thumbnail(url=self.author.avatar.url)
 
     @classmethod
-    def from_json(cls, json_object: dict, bot: Type[discord.Bot]):
+    def from_json(cls, json_object: dict):
         # noinspection PyArgumentList
-        return cls(**json_object.update({"author": bot.get_user(json_object["author"])}))
+        return cls(**json_object.update({"author": cls.bot.get_user(json_object["author"])}))
 
     def to_json(self):
         return self.__dict__.copy().update({"author": self.author.id})
@@ -102,6 +102,11 @@ class QuestionApprovalView(discord.ui.View):
     def __init__(self, question: Question):
         super().__init__(timeout=None)
         self.question = question
+
+    async def _scheduled_task(self, item: discord.ui.Item, interaction: discord.Interaction):
+        await super()._scheduled_task(item, interaction)
+        self.disable_all_items()
+        await self.message.edit(view=self)
 
     @discord.ui.button(style=discord.ButtonStyle.green, label="Approve")
     async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
