@@ -91,7 +91,7 @@ class DenyModal(discord.ui.Modal):
                 description=f"**Please read this carefully:** \n\n"
                             f"Your question/feedback was not accepted for this reason: {self.children[0].value}"
             ).set_footer(text="Please do not ask the same question/give the same feedback, "
-                              "instead, try to improve your existing question")
+                              "instead, try to improve your existing question/feedback")
             )
         except discord.Forbidden:
             await interaction.response.send_message("Question Denied\nUser was not notified: DMs are closed")
