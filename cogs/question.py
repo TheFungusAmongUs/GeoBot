@@ -55,7 +55,8 @@ class QuestionModal(discord.ui.Modal):
             min_length=10,
             max_length=2000,
             value=getattr(question, "body", None),
-            placeholder="You can add more details here! You can add images when the question has been improved."
+            placeholder="You can add more details here! You can add images when the question has been improved.",
+            style=discord.InputTextStyle.paragraph
         ))
 
     async def callback(self, interaction: discord.Interaction):
