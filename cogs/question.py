@@ -134,23 +134,27 @@ class QuestionApprovalView(discord.ui.View):
         self.question.save()
         await self.message.edit(view=self)
 
-    @discord.ui.button(style=discord.ButtonStyle.green, label="Approve", custom_id="approve")
+    @discord.ui.button(style=discord.ButtonStyle.green, label="Approve", custom_id="approve", emoji="📨")
     async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
         await self.question.post()
         self.question.status = QuestionStatus.APPROVED
         await interaction.response.send_message("Question has been approved")
 
-    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny", custom_id="deny")
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny", custom_id="deny", emoji="🚫")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
         await interaction.response.send_modal(DenyModal(self.question))
         self.question.status = QuestionStatus.DENIED
 
-    @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve", custom_id="improve")
+    @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve", custom_id="improve", emoji="📝")
     async def improve_button(self, button: discord.Button, interaction: discord.Interaction):
         await interaction.response.send_modal(QuestionModal(self.question))
 
-    @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate", custom_id="duplicate")
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate", custom_id="duplicate", emoji="🗃️")
     async def duplicate_button(self, button: discord.Button, interaction: discord.Interaction):
+        pass
+
+    @discord.ui.button(style=discord.ButtonStyle.grey, label="List Questions By Author", custom_id="list", emoji="📋")
+    async def list_questions(self, button: discord.Button, interaction: discord.Interaction):
         pass
 
 
