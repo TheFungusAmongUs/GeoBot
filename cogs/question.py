@@ -8,6 +8,10 @@ from utils.enums import QuestionStatus
 questions: list["Question"]
 
 
+def find_all_author_questions(author: Union[discord.Member, discord.User]) -> list["Question"]:
+    return [question for question in questions if question.author == author]
+
+
 class Question:
 
     bot: Type[discord.Bot]
@@ -34,7 +38,6 @@ class Question:
         return cls(**json_object)
 
     def to_json(self):
-        print(self.__dict__.copy())
         return dict(self.__dict__.copy(), **{"author": self.author.id, "status": self.status.__dict__["_name_"]})
 
     async def post(self):
@@ -50,7 +53,6 @@ class Question:
                 break
         else:
             questions.append(self)
-        print([q.to_json() for q in questions])
         with open("data/data.json", "w") as fp:
             json.dump([q.to_json() for q in questions], fp)
 
