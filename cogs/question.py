@@ -1,7 +1,11 @@
+import asyncio
 import discord
+import json
 import main
 from typing import Optional, Type, Union
 from utils.enums import QuestionStatus
+
+questions: list["Question"]
 
 
 class Question:
@@ -9,11 +13,12 @@ class Question:
     bot: Type[discord.Bot]
 
     def __init__(self, title: str, body: str, author: Union[discord.Member, discord.User],
-                 status: QuestionStatus = QuestionStatus.IN_REVIEW):
+                 status: QuestionStatus = QuestionStatus.IN_REVIEW, id: Optional[int] = None):
         self.status: QuestionStatus = status
         self.title = title
         self.body = body
         self.author = author
+        self.id = id
 
     def make_embed(self):
         return discord.Embed(
@@ -22,18 +27,32 @@ class Question:
         ).add_field(name="Submitted By", value=f"<@!{self.author.id}>").set_thumbnail(url=self.author.avatar.url)
 
     @classmethod
-    def from_json(cls, json_object: dict):
+    async def from_json(cls, json_object: dict):
         # noinspection PyArgumentList
-        return cls(**json_object.update({"author": cls.bot.get_user(json_object["author"])}))
+        json_object.update({"author": await cls.bot.fetch_user(json_object["author"]),
+                            "status": QuestionStatus[json_object["status"]]})
+        return cls(**json_object)
 
     def to_json(self):
-        return self.__dict__.copy().update({"author": self.author.id})
+        print(self.__dict__.copy())
+        return dict(self.__dict__.copy(), **{"author": self.author.id, "status": self.status.__dict__["_name_"]})
 
-    async def create(self):
+    async def post(self):
         # noinspection PyTypeChecker
         channel: discord.ForumChannel = self.bot.get_channel(main.GLOBAL_CONFIG["IAF_CHANNEL_ID"])
         self.status = QuestionStatus.APPROVED
         await channel.create_thread(name=self.title, content=self.body + f"\n\nOP: {self.author.mention}")
+
+    def save(self):
+        for question in questions:
+            if question.id == self.id:
+                question = self
+                break
+        else:
+            questions.append(self)
+        print([q.to_json() for q in questions])
+        with open("data/data.json", "w") as fp:
+            json.dump([q.to_json() for q in questions], fp)
 
 
 class QuestionModal(discord.ui.Modal):
@@ -62,16 +81,18 @@ class QuestionModal(discord.ui.Modal):
     async def callback(self, interaction: discord.Interaction):
         new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
         if self.question:
-            await new_question.create()
+            await new_question.post()
             await interaction.response.send_message("Question has been approved")
             new_question.status = QuestionStatus.APPROVED
             return
 
         # noinspection PyTypeChecker
         approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
-        await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
+        msg = await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
         await interaction.response.send_message(content="*Question Submitted*",
                                                 embed=new_question.make_embed(), ephemeral=True)
+        new_question.id = msg.id
+        new_question.save()
 
 
 class DenyModal(discord.ui.Modal):
@@ -108,24 +129,25 @@ class QuestionApprovalView(discord.ui.View):
     async def _scheduled_task(self, item: discord.ui.Item, interaction: discord.Interaction):
         await super()._scheduled_task(item, interaction)
         self.disable_all_items()
+        self.question.save()
         await self.message.edit(view=self)
 
-    @discord.ui.button(style=discord.ButtonStyle.green, label="Approve")
+    @discord.ui.button(style=discord.ButtonStyle.green, label="Approve", custom_id="approve")
     async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
-        await self.question.create()
+        await self.question.post()
         self.question.status = QuestionStatus.APPROVED
         await interaction.response.send_message("Question has been approved")
 
-    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny")
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny", custom_id="deny")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
         await interaction.response.send_modal(DenyModal(self.question))
         self.question.status = QuestionStatus.DENIED
 
-    @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve")
+    @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve", custom_id="improve")
     async def improve_button(self, button: discord.Button, interaction: discord.Interaction):
         await interaction.response.send_modal(QuestionModal(self.question))
 
-    @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate")
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate", custom_id="duplicate")
     async def duplicate_button(self, button: discord.Button, interaction: discord.Interaction):
         pass
 
@@ -134,6 +156,20 @@ class QuestionCog(discord.Cog):
 
     def __init__(self, bot):
         Question.bot = bot
+
+    @discord.Cog.listener()
+    async def on_ready(self):
+        global questions
+        await asyncio.sleep(2)
+        # noinspection PyTypeChecker
+        approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
+        with open("data/data.json", "r") as fp:
+            questions = [await Question.from_json(q) for q in json.load(fp)]
+        for question in questions:
+            view = QuestionApprovalView(question)
+            view.message = await approve_channel.fetch_message(question.id)
+            Question.bot.add_view(view=view, message_id=question.id)
+        print("Views have been loaded")
 
     @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
     async def ask(self, ctx: discord.ApplicationContext):
