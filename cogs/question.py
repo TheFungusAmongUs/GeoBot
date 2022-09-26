@@ -83,17 +83,17 @@ class QuestionModal(discord.ui.Modal):
     async def callback(self, interaction: discord.Interaction):
         new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
         if self.question:
+            new_question.id = self.question.id
             await new_question.post()
             await interaction.response.send_message("Question has been approved")
             new_question.status = QuestionStatus.APPROVED
-            return
-
-        # noinspection PyTypeChecker
-        approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
-        msg = await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
-        await interaction.response.send_message(content="*Question Submitted*",
-                                                embed=new_question.make_embed(), ephemeral=True)
-        new_question.id = msg.id
+        else:
+            # noinspection PyTypeChecker
+            approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
+            msg = await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
+            await interaction.response.send_message(content="*Question Submitted*",
+                                                    embed=new_question.make_embed(), ephemeral=True)
+            new_question.id = msg.id
         new_question.save()
 
 
