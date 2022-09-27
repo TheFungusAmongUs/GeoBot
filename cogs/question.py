@@ -134,7 +134,7 @@ class QuestionApprovalView(discord.ui.View):
         # If the modal has been cancelled or the button clicked was "List all questions"
         if self.question.status == QuestionStatus.IN_REVIEW or item == self.children[4]:
             return
-        self.disable_all_items()
+        self.disable_all_items(exclusions=[self.children[4]])
         self.question.save()
         await self.message.edit(view=self)
 
