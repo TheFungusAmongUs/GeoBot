@@ -17,7 +17,7 @@ class Question:
     bot: Type[discord.Bot]
 
     def __init__(self, title: str, body: str, author: Union[discord.Member, discord.User],
-                 status: QuestionStatus = QuestionStatus.IN_REVIEW, id: Optional[int] = None):
+                 status: QuestionStatus = QuestionStatus.IN_REVIEW, id: Optional[int] = None, **kwargs):
         self.status: QuestionStatus = status
         self.title = title
         self.body = body
@@ -38,7 +38,8 @@ class Question:
         return cls(**json_object)
 
     def to_json(self):
-        return dict(self.__dict__.copy(), **{"author": self.author.id, "status": self.status.__dict__["_name_"]})
+        return dict(self.__dict__.copy(), **{"author": self.author.id,
+                                             "status": self.status.__dict__["_name_"]})
 
     async def post(self):
         # noinspection PyTypeChecker
@@ -130,6 +131,9 @@ class QuestionApprovalView(discord.ui.View):
 
     async def _scheduled_task(self, item: discord.ui.Item, interaction: discord.Interaction):
         await super()._scheduled_task(item, interaction)
+        # If the modal has been cancelled or the button clicked was "List all questions"
+        if self.question.status == QuestionStatus.IN_REVIEW or item == self.children[4]:
+            return
         self.disable_all_items()
         self.question.save()
         await self.message.edit(view=self)
@@ -140,7 +144,7 @@ class QuestionApprovalView(discord.ui.View):
         self.question.status = QuestionStatus.APPROVED
         await interaction.response.send_message("Question has been approved")
 
-    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny", custom_id="deny", emoji="🚫")
+    @discord.ui.button(style=discord.ButtonStyle.red, label="Deny", custom_id="deny", emoji="✋")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
         await interaction.response.send_modal(DenyModal(self.question))
         self.question.status = QuestionStatus.DENIED
@@ -155,7 +159,13 @@ class QuestionApprovalView(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.grey, label="List Questions By Author", custom_id="list", emoji="📋")
     async def list_questions(self, button: discord.Button, interaction: discord.Interaction):
-        pass
+        embed = discord.Embed(
+            title=f"Questions from {self.question.author}",
+            description="\n".join([f"\\> [{q.title}](https://discord.com/channels/{main.GLOBAL_CONFIG['GUILD_ID']}/"
+                                   f"{main.GLOBAL_CONFIG['APPROVAL_CHANNEL_ID']}/{self.question.id}): {q.status.name}"
+                                   for q in find_all_author_questions(self.question.author)])
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class QuestionCog(discord.Cog):
