@@ -12,6 +12,13 @@ def find_all_author_questions(author: Union[discord.Member, discord.User]) -> li
     return [question for question in questions if question.author == author]
 
 
+async def after_button(view: discord.ui.View, message: discord.Message, question: "Question"):
+
+    view.disable_all_items(exclusions=[view.children[4]])
+    question.save()
+    await message.edit(view=view)
+
+
 class Question:
 
     bot: Type[discord.Bot]
@@ -60,9 +67,12 @@ class Question:
 
 class QuestionModal(discord.ui.Modal):
 
-    def __init__(self, question: Optional[Question] = None):
+    def __init__(self, question: Optional[Question] = None, view: Optional[discord.ui.View] = None,
+                 message: Optional[discord.Message] = None):
         super().__init__(title="Ask a question/Give feedback")
         self.question = question
+        self.view = view
+        self.message = message
 
         self.add_item(discord.ui.InputText(
             label="Question/Feedback Title",
@@ -82,31 +92,35 @@ class QuestionModal(discord.ui.Modal):
         ))
 
     async def callback(self, interaction: discord.Interaction):
-        new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
+
         if self.question:
-            new_question.id = self.question.id
-            await new_question.post()
+            self.question.title = self.children[0].value
+            self.question.body = self.children[1].value
+            await self.question.post()
             await interaction.response.send_message("Question has been approved")
-            new_question.status = QuestionStatus.APPROVED
+            await after_button(self.view, self.message, self.question)
         else:
+            new_question = Question(title=self.children[0].value, body=self.children[1].value, author=interaction.user)
             # noinspection PyTypeChecker
             approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
             msg = await approve_channel.send(embed=new_question.make_embed(), view=QuestionApprovalView(new_question))
             await interaction.response.send_message(content="*Question Submitted*",
                                                     embed=new_question.make_embed(), ephemeral=True)
             new_question.id = msg.id
-        new_question.save()
+            new_question.save()
 
 
 class DenyModal(discord.ui.Modal):
 
-    def __init__(self, question: Question):
+    def __init__(self, question: Question, view: discord.ui.View, message: discord.Message):
         super().__init__(title="Deny this question")
         self.add_item(discord.ui.InputText(
             label="Reason",
             placeholder="Why is this question being denied? :("
         ))
         self.question = question
+        self.view = view
+        self.message = message
 
     async def callback(self, interaction: discord.Interaction):
         try:
@@ -121,6 +135,7 @@ class DenyModal(discord.ui.Modal):
             await interaction.response.send_message("Question Denied\nUser was not notified: DMs are closed")
         else:
             await interaction.response.send_message("Question Denied\nUser was notified")
+        await after_button(self.view, self.message, self.question)
 
 
 class QuestionApprovalView(discord.ui.View):
@@ -129,29 +144,20 @@ class QuestionApprovalView(discord.ui.View):
         super().__init__(timeout=None)
         self.question = question
 
-    async def _scheduled_task(self, item: discord.ui.Item, interaction: discord.Interaction):
-        await super()._scheduled_task(item, interaction)
-        # If the modal has been cancelled or the button clicked was "List all questions"
-        if self.question.status == QuestionStatus.IN_REVIEW or item == self.children[4]:
-            return
-        self.disable_all_items(exclusions=[self.children[4]])
-        self.question.save()
-        await self.message.edit(view=self)
-
     @discord.ui.button(style=discord.ButtonStyle.green, label="Approve", custom_id="approve", emoji="📨")
     async def approve_button(self, button: discord.Button, interaction: discord.Interaction):
         await self.question.post()
-        self.question.status = QuestionStatus.APPROVED
         await interaction.response.send_message("Question has been approved")
+        await after_button(self, self.message, self.question)
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Deny", custom_id="deny", emoji="✋")
     async def deny_button(self, button: discord.Button, interaction: discord.Interaction):
-        await interaction.response.send_modal(DenyModal(self.question))
+        await interaction.response.send_modal(DenyModal(self.question, self, self.message))
         self.question.status = QuestionStatus.DENIED
 
     @discord.ui.button(style=discord.ButtonStyle.blurple, label="Improve", custom_id="improve", emoji="📝")
     async def improve_button(self, button: discord.Button, interaction: discord.Interaction):
-        await interaction.response.send_modal(QuestionModal(self.question))
+        await interaction.response.send_modal(QuestionModal(self.question, self, self.message))
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate", custom_id="duplicate", emoji="🗃️")
     async def duplicate_button(self, button: discord.Button, interaction: discord.Interaction):
@@ -168,28 +174,48 @@ class QuestionApprovalView(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+class CreatePostView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Create Post", emoji="📝", style=discord.ButtonStyle.green, custom_id="create")
+    async def create_post_button(self, button: discord.Button, interaction: discord.Interaction):
+        await interaction.response.send_modal(QuestionModal())
+
+
 class QuestionCog(discord.Cog):
 
     def __init__(self, bot):
         Question.bot = bot
+        self.bot = bot
 
     @discord.Cog.listener()
     async def on_ready(self):
         global questions
         await asyncio.sleep(2)
         # noinspection PyTypeChecker
-        approve_channel: discord.TextChannel = Question.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
+        approve_channel: discord.TextChannel = self.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
         with open("data/data.json", "r") as fp:
             questions = [await Question.from_json(q) for q in json.load(fp)]
         for question in questions:
             view = QuestionApprovalView(question)
             view.message = await approve_channel.fetch_message(question.id)
-            Question.bot.add_view(view=view, message_id=question.id)
+            self.bot.add_view(view=view, message_id=question.id)
         print("Views have been loaded")
-
-    @discord.command(guild_ids=[main.GLOBAL_CONFIG["GUILD_ID"]])
-    async def ask(self, ctx: discord.ApplicationContext):
-        await ctx.response.send_modal(QuestionModal())
+        # noinspection PyTypeChecker
+        create_post_channel: discord.TextChannel = self.bot.get_channel(
+            main.GLOBAL_CONFIG["CREATE_POST_CHANNEL_ID"]
+        )
+        if not await create_post_channel.history().flatten():
+            embed = discord.Embed(
+                title="Create Post",
+                description="You can create a post by clicking on the button below :)\n\n"
+                            "Feel free to give your feedback or ask any questions,"
+                            " just make sure it's on topic and constructive!"
+            )
+            await create_post_channel.send(embed=embed, view=CreatePostView())
+        else:
+            self.bot.add_view(CreatePostView())
 
 
 def setup(bot):
