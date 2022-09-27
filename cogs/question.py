@@ -161,7 +161,7 @@ class QuestionApprovalView(discord.ui.View):
 
     @discord.ui.button(style=discord.ButtonStyle.red, label="Duplicate", custom_id="duplicate", emoji="🗃️")
     async def duplicate_button(self, button: discord.Button, interaction: discord.Interaction):
-        pass
+        await interaction.response.send_message(content="Hmmm, you haven't unlocked that yet", ephemeral=True)
 
     @discord.ui.button(style=discord.ButtonStyle.grey, label="List Questions By Author", custom_id="list", emoji="📋")
     async def list_questions(self, button: discord.Button, interaction: discord.Interaction):
