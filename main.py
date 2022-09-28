@@ -25,9 +25,10 @@ class GeoBot(discord.Bot):
     async def on_ready(self):
         print(f"Bot is ready! Version info: {discord.__version__}")
         await asyncio.sleep(5)
-        self.change_map.start()
+        if not self.change_map.is_running():
+            self.change_map.start()
 
-    @tasks.loop(hours=2)
+    @tasks.loop(hours=1)
     async def change_map(self):
         await self.change_presence(activity=discord.Game(name=random.choice(maps)))
 
