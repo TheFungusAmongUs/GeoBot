@@ -84,7 +84,7 @@ class PostModal(discord.ui.Modal):
                     label="Post/Feedback Body",
                     min_length=10,
                     max_length=2000,
-                    value=getattr(post, "body", None),
+                    value=getattr(post, "values", {"Post/Feedback Body": ""})["Post/Feedback Body"],
                     placeholder="You can add more details here! You can add images when the post has been improved.",
                     style=discord.InputTextStyle.paragraph
                 )
@@ -95,26 +95,31 @@ class PostModal(discord.ui.Modal):
                 discord.ui.InputText(
                     label="Issue Title",
                     placeholder="Enter a brief description of the error.",
+                    value=getattr(post, "title", None),
                     max_length=100
                 ),
                 discord.ui.InputText(
                     label="Steps to reproduce the issue",
                     placeholder="What do you need for the issue to arise?",
+                    value=getattr(post, "values", {"Steps to reproduce the issue": ""})["Steps to reproduce the issue"],
                     style=discord.InputTextStyle.paragraph
                 ),
                 discord.ui.InputText(
                     label="What is the expected result?",
                     placeholder="Please enter the expected result, even if it's obvious :)",
+                    value=getattr(post, "values", {"What is the expected result?": ""})["What is the expected result?"],
                     style=discord.InputTextStyle.paragraph
                 ),
                 discord.ui.InputText(
                     label="What's the actual result?",
-                    placeholder="This may be redundant, but please enter the actual result here",
+                    placeholder="Please enter the actual result here",
+                    value=getattr(post, "values", {"What's the actual result?": ""})["What's the actual result?"],
                     style=discord.InputTextStyle.paragraph
                 ),
                 discord.ui.InputText(
                     label="Additional Details",
                     placeholder="Is there anything more you want to add?",
+                    value=getattr(post, "values", {"Additional Details": ""})["Additional Details"],
                     style=discord.InputTextStyle.paragraph
                 )
             ]
