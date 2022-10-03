@@ -29,7 +29,7 @@ class PostCreationCog(discord.Cog):
         )
         if not await create_post_channel.history().flatten():
             embed = discord.Embed(
-                title="Create Post/Bug Report/Ticket",
+                title="Create Post/Bug Report",
                 description="You can create a post or bug report by clicking on the respective button below :)\n\n"
                             "Feel free to give your feedback or ask any questions,"
                             " just make sure it's on topic and constructive!"
