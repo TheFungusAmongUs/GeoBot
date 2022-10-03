@@ -16,20 +16,22 @@ class Post:
 
     bot: discord.Bot
 
-    def __init__(self, title: str, body: str, author: Union[discord.Member, discord.User], type: PostType,
+    def __init__(self, title: str, values: dict[str, str], author: Union[discord.Member, discord.User], type: PostType,
                  status: PostStatus = PostStatus.IN_REVIEW, id: Optional[int] = None):
         self.status: PostStatus = status
         self.title = title
-        self.body = body
+        self.values = values
         self.author = author
         self.id = id
         self.type = type
 
     def make_embed(self):
-        return discord.Embed(
-            title=self.title,
-            description=self.body,
+        embed = discord.Embed(
+            title=self.title
         ).add_field(name="Submitted By", value=f"<@!{self.author.id}>").set_thumbnail(url=self.author.avatar.url)
+        for title, content in self.values.items():
+            embed.add_field(name=title, value=content)
+        return embed
 
     @classmethod
     async def from_json(cls, json_object: dict):
@@ -48,7 +50,7 @@ class Post:
         # noinspection PyTypeChecker
         channel: discord.ForumChannel = self.bot.get_channel(main.GLOBAL_CONFIG[self.type.value])
         self.status = PostStatus.APPROVED
-        await channel.create_thread(name=self.title, content=self.body + f"\n\nOP: {self.author.mention}")
+        await channel.create_thread(name=self.title, embed=self.make_embed())
 
     def save(self):
         for post in posts:
@@ -91,9 +93,9 @@ class PostModal(discord.ui.Modal):
             title = "Create a bug report"
             items = [
                 discord.ui.InputText(
-                    label="Issue Description",
+                    label="Issue Title",
                     placeholder="Enter a brief description of the error.",
-                    style=discord.InputTextStyle.paragraph
+                    max_length=100
                 ),
                 discord.ui.InputText(
                     label="Steps to reproduce the issue",
@@ -124,13 +126,13 @@ class PostModal(discord.ui.Modal):
 
         if self.post:
             self.post.title = self.children[0].value
-            self.post.body = '\n'.join([child.value for child in self.children[1:]])
+            self.post.values = {child.label: child.value for child in self.children[1:]}
             await self.post.post()
             await interaction.response.send_message("Post has been approved")
             await self.view.after_button()
         else:
-            new_post = Post(title=self.children[0].value, body='\n'.join([child.value for child in self.children[1:]]),
-                            author=interaction.user, type=self.type)
+            new_post = Post(title=self.children[0].value, author=interaction.user, type=self.type,
+                            values={child.label: child.value for child in self.children[1:]})
             # noinspection PyTypeChecker
             approve_channel: discord.TextChannel = Post.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
             msg = await approve_channel.send(embed=new_post.make_embed(), view=PostApprovalView(new_post))
