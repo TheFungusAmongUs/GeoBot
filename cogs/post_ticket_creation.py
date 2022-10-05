@@ -1,6 +1,7 @@
 import discord
 import main
 from cogs.post import PostModal
+from cogs.tickets import TicketModal
 from utils.enums import PostType
 
 
@@ -17,7 +18,17 @@ class CreatePostView(discord.ui.View):
         await interaction.response.send_modal(PostModal(PostType.BUG_REPORT))
 
 
-class PostCreationCog(discord.Cog):
+class CreateTicketView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Create Private Ticket", emoji="🗳️", custom_id="create-ticket")
+    async def create_ticket_button(self, button: discord.Button, interaction: discord.Interaction):
+        await interaction.response.send_modal(TicketModal())
+
+
+class PostTicketCreationCog(discord.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -38,6 +49,20 @@ class PostCreationCog(discord.Cog):
         else:
             self.bot.add_view(CreatePostView())
 
+        create_ticket_channel: discord.TextChannel = self.bot.get_channel(
+            main.GLOBAL_CONFIG["CREATE_TICKET_CHANNEL_ID"]
+        )
+        if not await create_ticket_channel.history().flatten():
+            embed = discord.Embed(
+                title="Create Private Ticket",
+                description="You can create a ticket by clicking the button below. \n\n"
+                            "You can have a maximum of 3 tickets open at a time."
+            ).set_footer(text="Abuse of the ticketing feature may result in the revocation of this privilege,"
+                              " or a ban from the server")
+            await create_ticket_channel.send(embed=embed, view=CreateTicketView())
+        else:
+            self.bot.add_view(CreateTicketView())
+
 
 def setup(bot):
-    bot.add_cog(PostCreationCog(bot))
+    bot.add_cog(PostTicketCreationCog(bot))
