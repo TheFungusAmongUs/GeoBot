@@ -59,7 +59,7 @@ class Post:
                 break
         else:
             posts.append(self)
-        with open("data/data.json", "w") as fp:
+        with open("data/posts.json", "w") as fp:
             json.dump([q.to_json() for q in posts], fp)
 
 
@@ -227,7 +227,7 @@ class PostCog(discord.Cog):
         await asyncio.sleep(2)
         # noinspection PyTypeChecker
         approve_channel: discord.TextChannel = self.bot.get_channel(main.GLOBAL_CONFIG["APPROVAL_CHANNEL_ID"])
-        with open("data/data.json", "r") as fp:
+        with open("data/posts.json", "r") as fp:
             posts = [await Post.from_json(q) for q in json.load(fp)]
         for post in posts:
             view = PostApprovalView(post)
