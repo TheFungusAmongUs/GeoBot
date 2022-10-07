@@ -44,6 +44,12 @@ class Ticket:
         return ticket
 
 
+class TicketStoreView(discord.ui.View):
+
+    def __init__(self, ticket: Ticket):
+        super().__init__(timeout=None)
+
+
 class TicketModal(discord.ui.Modal):
 
     def __init__(self):
