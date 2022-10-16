@@ -1,16 +1,18 @@
 import discord
-
 import main
+from utils.enums import TicketStatus
 
 
 class Ticket:
 
-    def __init__(self, channel: discord.TextChannel, title: str, body: str, author: discord.User, id: int = 0):
+    def __init__(self, channel: discord.TextChannel, title: str, body: str, author: discord.User, id: int = 0,
+                 status: TicketStatus = TicketStatus.OPEN):
         self.author = author
         self.channel = channel
         self.title = title
         self.body = body
-        self.id: int = id
+        self.id = id
+        self.status = status
 
     def make_embed(self):
         return discord.Embed(
