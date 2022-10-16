@@ -28,20 +28,21 @@ class Ticket:
 
     @classmethod
     async def from_modal(cls, title: str, body: str, interaction: discord.Interaction):
-        overwrites = {
-            interaction.user: discord.PermissionOverwrite(view_channel=True, read_messages=True, send_messages=True)
-        }
-        ticket_channel: discord.TextChannel = (
-            await interaction.channel.category.create_text_channel(
-                name=f"{interaction.user.nick or interaction.user.name}-",
-                overwrites=overwrites,
-            )
-        )
-
+        ticket_channel = await cls.create_channel(interaction)
         ticket = cls(ticket_channel, title=title, body=body, author=interaction.user)
         await ticket_channel.send(embed=ticket.make_embed())
 
         return ticket
+
+    @staticmethod
+    async def create_channel(interaction: discord.Interaction) -> discord.TextChannel:
+        overwrites = {
+            interaction.user: discord.PermissionOverwrite(view_channel=True, read_messages=True, send_messages=True)
+        }
+        return await interaction.channel.category.create_text_channel(
+            name=f"{interaction.user.nick or interaction.user.name}-",
+            overwrites=overwrites,
+        )
 
 
 class TicketStoreView(discord.ui.View):
