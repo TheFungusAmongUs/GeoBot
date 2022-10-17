@@ -80,7 +80,7 @@ class TicketStoreView(discord.ui.View):
     async def reopen_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         pass
 
-    @discord.ui.button(label="Mark Resolved", style=discord.ButtonStyle.green, custom_id="resolved-button")
+    @discord.ui.button(label="Toggle Resolved", style=discord.ButtonStyle.green, custom_id="resolved-button")
     async def resolved_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         pass
 
@@ -106,7 +106,7 @@ class TicketModal(discord.ui.Modal):
         ticket = await Ticket.from_modal(self.children[0].value, self.children[1].value, interaction)
         ticket_store_channel = interaction.guild.get_channel(main.GLOBAL_CONFIG["TICKET_STORE_CHANNEL_ID"])
 
-        await ticket_store_channel.send(embed=ticket.make_embed())
+        await ticket_store_channel.send(embed=ticket.make_embed(), view=TicketStoreView(ticket))
 
 
 class TicketCog(discord.Cog):
