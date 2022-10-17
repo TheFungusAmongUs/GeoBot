@@ -72,6 +72,18 @@ class TicketStoreView(discord.ui.View):
     def __init__(self, ticket: Ticket):
         super().__init__(timeout=None)
 
+    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="close-button")
+    async def close_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        pass
+
+    @discord.ui.button(label="Re-open Ticket", style=discord.ButtonStyle.grey, custom_id="reopen-button")
+    async def reopen_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        pass
+
+    @discord.ui.button(label="Mark Resolved", style=discord.ButtonStyle.green, custom_id="resolved-button")
+    async def resolved_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        pass
+
 
 class TicketModal(discord.ui.Modal):
 
