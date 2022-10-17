@@ -43,8 +43,8 @@ class Post:
 
     def to_json(self):
         return dict(self.__dict__.copy(), **{"author": self.author.id,
-                                             "status": self.status.__dict__["_name_"],
-                                             "type": self.type.__dict__["_name_"]})
+                                             "status": self.status.name,
+                                             "type": self.type.name})
 
     async def post(self):
         # noinspection PyTypeChecker
