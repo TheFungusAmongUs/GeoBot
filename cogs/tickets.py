@@ -46,6 +46,26 @@ class Ticket:
             overwrites=overwrites,
         )
 
+    async def generate_transcript(self) -> tuple[str, list[discord.Attachment]]:
+        transcript = ""
+        attachments = []
+        async for message in self.channel.history():
+            transcript += f"{message.author.mention}: {message.content}\n"
+            if message.attachments:
+                transcript += "Files: "
+            for attachment in message.attachments:
+                transcript += f"{attachment.filename} "
+                attachments += attachment
+            transcript += '\n\n'
+
+        return transcript, attachments
+
+    async def close(self):
+        pass
+
+    async def reopen(self):
+        pass
+
 
 class TicketStoreView(discord.ui.View):
 
