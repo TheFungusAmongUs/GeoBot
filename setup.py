@@ -18,7 +18,7 @@ def setup_toml() -> None:
             toml.dump(toml.load(base_file), file)
 
 
-data_files = ["posts.json", "tickets.json"]
+data_files = ["posts.json"]
 
 
 def setup_data() -> None:

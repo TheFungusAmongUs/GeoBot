@@ -13,9 +13,3 @@ class PostType(Enum):
 
     FEEDBACK_QUESTION = "IAF_CHANNEL_ID"
     BUG_REPORT = "BUG_REPORT_CHANNEL_ID"
-
-
-class TicketStatus(Enum):
-    CLOSED = -1
-    OPEN = 0
-    RESOLVED = 1
